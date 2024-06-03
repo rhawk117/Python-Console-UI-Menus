@@ -1,0 +1,43 @@
+
+Subject: Meeting Confirmation
+From: Jane Smith <jsmith@example.com>
+Please confirm your attendance by calling my office at 555-123-4567. I am the HR Manager
+at Widget Corp.
+
+Subject: Meeting Confirmation
+From: Jane Smith <jsmith@example.com>
+Please confirm your attendance by calling my office at 555-123-4567. I am the HR Manager at Widget Corp.
+
+Subject: Conference Invitation
+From: Alice Johnson <ajohnson@example.com>
+Join us at the annual tech conference at Stanford University. 
+Contact me at alice.johnson@university.edu.
+
+Subject: Project Proposal
+From: Mike Brown <mbrown@example.com>
+I've attached the proposal. My mobile number is 987-654-3210. Looking forward to your feedback, Mike Brown, Project Manager.
+
+Subject: Update on Budget
+From: Sarah Clark <sclark@example.com>
+I've updated the budget sheet. Please review and get back to me at 321-555-7890. Regards, Sarah Clark, Financial Advisor.
+
+Subject: Alumni Gathering
+From: Brian Wilson <bwilson@example.com>
+We are organizing an alumni gathering at the University of Texas. Reach out to me at 212-555-1234 for more details.
+
+Subject: Research Collaboration
+From: Nancy Moore <nmoore@example.edu>
+I would love to discuss a potential research collaboration. Contact me at Nancy.Moore@cambridge.edu.
+
+Subject: Interview Schedule
+From: James Anderson <janderson@example.com>
+Please send me your available times. You can text me at 654-321-9876. James Anderson, Recruitment Specialist.
+
+Subject: Contract Review
+From: Linda White <lwhite@example.com>
+Please review the attached contract and get back to me. My SSN is 123-45-6789 for the background check.
+
+Subject: Lecture Invitation
+From: Robert Harris <rharris@example.edu>
+I'm inviting you to my lecture on cybersecurity at Harvard University next week.
+ Email rharris@harvard.edu for details.
