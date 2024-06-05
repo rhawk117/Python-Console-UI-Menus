@@ -5,7 +5,17 @@ import time
 import msvcrt
 import sys 
 
+class MenuError(Exception):
+    '''base class for all menu errors'''
+    
 
+class EmptyMenuError(MenuError):
+    """Raised when trying to create a menu with no options."""
+    pass
+
+class InvalidPageSizeError(MenuError):
+    """Raised when an invalid page size is provided."""
+    pass
 
 class MenuStyle:
     VALID_STYLES: dict[str, set[str]]= {
@@ -97,12 +107,15 @@ class MenuStyle:
         prompt = f'[ < ? > { prompt } < ? > ]'
         return ConsoleStencil.multi_style(prompt, **self.prompt_style)
 
-    
+class HorizontalSizeError(MenuError):
+    '''Raised when the number of options exceeds the screen width.'''
+    pass
+
 
 class BaseMenu:
     def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None) -> None:
         if len(options) == 0:
-            raise ValueError('ERROR: Menus must have at least one option')
+            raise EmptyMenuError('ERROR: Menus must have at least one option')
 
         self.options: list[str] = options
         self.prompt: str = prompt
@@ -134,7 +147,7 @@ class BaseMenu:
         
         self.menu_style = MenuStyle(selected, unselected, prompt)
         
-    def display(self) -> None:
+    def show(self) -> None:
         raise NotImplementedError('ERROR: Called on Base Class, Subclasses must implement this method')
 
     def run(self) -> str:
@@ -148,7 +161,7 @@ class BaseMenu:
         '''
         self.active = True
         while self.active:
-            self.display()
+            self.show()
             key = keyboard.read_event()
             if key.event_type != keyboard.KEY_DOWN:
                 continue
@@ -167,9 +180,11 @@ class BaseMenu:
     def move_up(self) -> None:
         self.highlight = (self.highlight - 1) % len(self.options)
     
+    def exit_ui(self) -> None:
+        self.active = False
 
 class VerticalMenu(BaseMenu):
-    def display(self) -> None:
+    def show(self) -> None:
         self.clear()
         prompt = self.menu_style.prompt_stylize(self.prompt)
         print(prompt)
@@ -183,15 +198,17 @@ class VerticalMenu(BaseMenu):
         elif key.name == 'down':
             self.move_down()
 
+
+
 class HorizontalMenu(BaseMenu):
     def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None) -> None:
         super().__init__(options, prompt, menu_style)
         if len(options) > 6:
-            raise ValueError('ERROR: Horizontal Menus must have 6 or fewer options or they wont fit on the screen')
+            raise HorizontalSizeError('ERROR: Horizontal Menus must have 6 or fewer options or they wont fit on the screen')
         self.active = False
         self.highlight = 0
     
-    def display(self):
+    def show(self):
         self.clear()
         prompt = self.menu_style.prompt_stylize(self.prompt)
         print(prompt)
@@ -205,6 +222,120 @@ class HorizontalMenu(BaseMenu):
         elif key.name == 'right':
             self.move_down()
 
+# def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None) -> None:
+
+
+class PagedMenu(BaseMenu):
+    NAV_GUIDE = "\t< i > Move ↑/↓  | Page ←/→ | Select Enter  < i >"
+
+    def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None, 
+    page_size: int = 3):
+        self.__guard_ctor(page_size, options)
+        super().__init__(options, prompt, menu_style)
+        self.running: bool = False
+        self.__setup_menu(page_size)
+        
+    def __setup_menu(self, page_size: int) -> None:
+        '''
+            sets up attributes / properties required
+            for the paged menu to function correctly
+        '''
+        self.page_size: int = page_size
+        self.total_pages: int = (len(self.options) + page_size - 1) // page_size
+        self.current_page: int = 1
+        self.highlight: int = 0
+        
+    def __guard_ctor(self, page_size: int, options: list) -> None:
+        if page_size <= 0:
+            raise ValueError("[ ERROR ] Page size must be greater than zero.")
+        if page_size > len(options):
+            raise InvalidPageSizeError(
+                "[ ERROR ] Page size must be less than or equal to the number of options.")
+
+    @property
+    def current_page(self) -> int:
+        return self._current_page
+
+    @current_page.setter
+    def current_page(self, value: int) -> None:
+        ''''
+            Allows the current page to bounce on first and last 
+        '''
+        if value < 1:
+            self._current_page = self.total_pages
+
+        elif value > self.total_pages:
+            self._current_page = 1
+
+        else:
+            self._current_page = value
+
+        self.highlight = 0
+
+    @property
+    def current_page_options(self) -> list[str]:
+        '''
+            Refreshes the items on each page 
+        '''
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        return self.options[start: end]
+
+    def __title_text(self) -> None:
+        bar = '*' * 100
+        nav_txt = ConsoleStencil.multi_style(
+            f'{ bar }\n{ self.NAV_GUIDE }\n{ bar }\n', ansi='italic', style='dim'
+        )
+        prompt_txt = self.menu_style.prompt_stylize(self.prompt)
+        print(
+        f'{ nav_txt }{ prompt_txt } - [ Page { self.current_page } / { self.total_pages } ]\n'
+        )
+        
+    def show(self) -> None:
+        '''
+            Displays the UI in the Console highlighting
+            the currently selected option.
+        '''
+        self.clear()
+        self.__title_text()
+        for idx, option in enumerate(self.current_page_options):
+            opt = self.menu_style.apply_option_style(option, 
+            idx == self.highlight)
+            print(opt)
+        print('*' * 100)
+
+    def handle_keys(self, key: keyboard.KeyboardEvent) -> None:
+        '''
+            Handles user keyboard input and manipulates list of
+            options; properties handle the 'bouncing' allowing 
+            last and first pages to seemlessly transition.
+        '''
+        if key.name == 'up':
+            self.highlight = (self.highlight - 1) % len(self.current_page_options)
+
+        elif key.name == 'down':
+            self.highlight = (self.highlight + 1) % len(self.current_page_options)
+
+        elif key.name == 'left':
+            self.current_page -= 1
+
+        elif key.name == 'right':
+            self.current_page += 1
+
+        elif key.name == 'enter':
+            self.running = False
+    
+
+    def run(self) -> str:
+        self.running = True
+        while self.running:
+            self.show()
+            key = keyboard.read_event()
+            if key.event_type != keyboard.KEY_DOWN:
+                continue
+            self.handle_keys(key)
+            time.sleep(0.01)
+        return self.current_page_options[self.highlight]
 
 class CharMenuStyle:
     OPTION_DEFAULT = {
@@ -217,16 +348,13 @@ class CharMenuStyle:
     }
     
     def __init__(self, option_style: dict[str, str] = {}, prompt_style: dict[str, str] = {}) -> None:
-        self.__stylize_components(option_style, prompt_style)
+        self.option_style = self.__stylize(option_style)
+        self.prompt_style = self.__stylize(prompt_style)
     
     def __stylize(self, styling: dict[str,str]) -> None:
         styling = MenuStyle.validate_style(styling)
         return styling if styling else CharMenuStyle.OPTION_DEFAULT
     
-    def __stylize_components(self, option: dict[str, str], prompt: dict[str, str]) -> None:
-        self.option_style = self.__stylize(option)
-        self.prompt_style = self.__stylize(prompt)
-
     @staticmethod
     def create_default():
         return CharMenuStyle(CharMenuStyle.OPTION_DEFAULT, CharMenuStyle.PROMPT_DEFAULT)
@@ -238,9 +366,6 @@ class CharMenuStyle:
         return ConsoleStencil.multi_style(prompt, **self.prompt_style)
 
         
-        
-
-
 class CharMenu:
     def __init__(self, key_map: dict[str, str], prompt: str, option_style: CharMenuStyle = None) -> None:
         '''
@@ -248,7 +373,7 @@ class CharMenu:
                 key_map (dict[str, str]): A dictionary mapping keys to options
                 (e.g {'a': 'Option 1', 'b': 'Option 2'})
                 
-                prompt (str): The prompt to display at the top of the menu
+                prompt (str): The prompt to show at the top of the menu
         '''
         if len(key_map) == 0:
             raise ValueError('ERROR: Menus must have at least one option')
@@ -256,17 +381,17 @@ class CharMenu:
         self.prompt: str = prompt
         self.style: CharMenuStyle = option_style if option_style else CharMenuStyle.create_default()
         
-    def read_key(self) -> str:
+    def __read_key(self) -> str:
         '''
             Reads a single key without the need for the user to press enter
             built for both Unix and Windows 
         '''
         if os.name == 'nt':
             return msvcrt.getch().decode('utf-8')
-
-        return self.unix_read_key()
+        else:
+            return self.__unix_read_key()
     
-    def unix_read_key(self) -> str:
+    def __unix_read_key(self) -> str:
         import termios
         import tty
         fd = sys.stdin.fileno()
@@ -288,7 +413,7 @@ class CharMenu:
         key = None
         while not key in self.key_map.keys():
             self.show()
-            key = self.read_key()
+            key = self.__read_key()
         return self.key_map[key]
     
 
@@ -412,13 +537,27 @@ def test_char_menu():
         print(f"Caught error: {e}\n")
 
 
+def test_paged():
+    options = [f"Option {i} " for i in range(51)]
+    menu = PagedMenu(options, "Testing (shrexd)", page_size=10)
+    choice = menu.run()
+    
+    print(f'You selected { choice }')
+    
+    
+    
+
+
 
 
 
 def main() -> None:
-    test_vertical_menu()
-    test_horizontal_menu()
-    test_char_menu()
+    # test_vertical_menu()
+    # test_horizontal_menu()
+    # test_char_menu()
+    test_paged()
+
+
 
 if __name__ == "__main__":
     main()

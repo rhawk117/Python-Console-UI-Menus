@@ -25,23 +25,20 @@ class ConsoleStencil:
         'italic': '\033[3m',
         'normal': '\033[0m'
     }
-
-    @staticmethod
-    def _log_error(message: str) -> None:
-        print(f"[ ! ] WARNING: { message } [ ! ]")
-
+    
     @staticmethod
     def ansify(text: str, ansi: str) -> str:
         """
-        Apply an ANSI style to the text. 
-        Accepts 'bold', 'underline', 'italic', 'normal' as valid styles.
-        
-        Args:
-            text (str): _description_
-            ansi (str): _description_
+            Apply an ANSI style to the text. 
+            
+            Accepts 'bold', 'underline', 'italic', 'normal' as valid styles.
 
-        Returns:
-            str: _description_
+            Args:
+                text (str): _description_
+                ansi (str): _description_
+
+            Returns:
+                str: _description_
         """
         ansi = ansi.lower()
         if not ansi in ConsoleStencil.VALID_ANSI_STYLES:
@@ -51,14 +48,17 @@ class ConsoleStencil:
     @staticmethod
     def colorize(text: str, color: str) -> str:
         """
-        Applies color to the text itself.
-        
-        Accepts 'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 
-        'white', 'black' as valid colors.
+            Applies a foreground color to the text of string
+            passed.
 
-        Args:
-            text (str): text to colorize
-            color (str): color to apply
+            If the color is not valid, the text is returned as is.
+            
+            Accepts 'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 
+            'white', 'black' as valid colors.
+
+            Args:
+                text (str): text to colorize
+                color (str): color to apply
 
         """
         color = color.lower()
@@ -73,6 +73,8 @@ class ConsoleStencil:
         Accepts 'red', 'green', 'blue', 'yellow', 'magenta', 'cyan',
         'white', 'black' as valid colors.
 
+        If the color is not valid, the text is returned as is.
+        
         Args:
             text (str): text to colorize
             color (str): color to apply
@@ -86,6 +88,8 @@ class ConsoleStencil:
     def font_variant(text: str, style: str) -> str:
         """
         Apply a colorama style to the entire text.
+        
+        If the variant is not valid, the text is returned as is.
         
         Args:
             text (str): The text to style.
@@ -118,16 +122,21 @@ class ConsoleStencil:
     @staticmethod
     def multi_style(text: str, **kwargs) -> str:
         """
-        Apply styles to text using keyword arguments for maximum flexibility.
+            Apply styles to text using keyword arguments for maximum flexibility.
 
-        Keyword Args:
-            text (str): The text to style.
-            ansi (str, optional): The text style such as 'bold', 'underline', etc.
-            fg_color (str, optional): The foreground color.
-            bg_color (str, optional): The background color.
-            style (str, optional): The colorama style such as 'bright', 'dim', etc.
-        Returns:
-            str: The stylized text.
+            Keyword Args:
+                text (str): The text to style.
+
+                ansi (str, optional): The text style such as 'bold', 'underline', etc.
+
+                fg_color (str, optional): The foreground color.
+
+                bg_color (str, optional): The background color.
+
+                style (str, optional): The colorama style such as 'bright', 'dim', etc.
+
+            Returns:
+                str: The stylized text.
         """
         styled_text = text
         for key, value in kwargs.items():
@@ -152,21 +161,21 @@ class ConsoleStencil:
     @staticmethod
     def highlight_phrase(text: str, phrase: str, ansi: str) -> str:
         """
-        Highlight all occurrences of 'phrase' in 'text' with the specified ANSI style.
+            Highlight all occurrences of 'phrase' in 'text' with the specified ANSI style.
 
-        Args:
-            text (str): The full text in which to highlight the phrase.
-            phrase (str): The phrase within the text to highlight.
-            style (str): The ANSI style to apply ('bold', 'underline', 'italic').
+            -If the phrase is not found in the text, the text is returned as is.
+            
+            -If the style is not valid, the text is returned as is.
+            
+            Args:
+                text (str): The full text in which to highlight the phrase.
+                phrase (str): The phrase within the text to highlight.
+                style (str): The ANSI style to apply ('bold', 'underline', 'italic').
 
-        Returns:
-            str: The text with the phrase highlighted.
+            Returns:
+                str: The text with the phrase highlighted.
         """
-        if not phrase in text:
-            return text
-        
-        if not ansi in ConsoleStencil.VALID_ANSI_STYLES:
-            ConsoleStencil._log_error(f"Invalid ANSI style: '{ ansi }'. No style applied.")
+        if not phrase in text or not ansi in ConsoleStencil.VALID_ANSI_STYLES:
             return text
         
         ansi = ansi.lower()
@@ -178,30 +187,30 @@ class ConsoleStencil:
     @staticmethod
     def bold(text: str) -> str:
         """
-        Returns a bolded version of a string passed.
-        
-        Args:
-            text (str): The text to bold.
+            Returns a bolded version of a string passed.
+
+            Args:
+                text (str): The text to bold.
         """
         return ConsoleStencil.ansify(text, style='bold')
 
     @staticmethod
     def underline(text: str) -> str:
         """
-        Returns an underlined version of string passed.
-        
-        Args:
-            text (str): The text to underline.
+            Returns an underlined version of string passed.
+
+            Args:
+                text (str): The text to underline.
         """
         return ConsoleStencil.ansify(text, ansi='underline')
 
     @staticmethod
     def italicize(text: str) -> str:
         """
-        Returns an italicized version of string passed.
-        
-        Args:
-            text (str): The text to italicize.
+            Returns an italicized version of the string passed.
+
+            Args:
+                text (str): The text to italicize.
         """
         return ConsoleStencil.ansify(text, ansi='italic')
 
