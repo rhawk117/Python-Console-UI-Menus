@@ -44,7 +44,7 @@ class ConsoleStencil:
             str: _description_
         """
         ansi = ansi.lower()
-        if not ansi.lower() in ConsoleStencil.VALID_ANSI_STYLES:
+        if not ansi in ConsoleStencil.VALID_ANSI_STYLES:
             return text
         return f"{ ConsoleStencil.ANSI_STYLE_MAP[ansi] } { text } { ConsoleStencil.ANSI_STYLE_MAP['normal'] }"
     
