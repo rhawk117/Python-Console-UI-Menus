@@ -1,24 +1,46 @@
 from colorama import Fore, Back, Style, init
+import re 
 
 init(autoreset=True)
-
 class ConsoleStencil:
-    VALID_COLORS: set[str] = {
-        'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'white', 'black'
-    }
-    VALID_STYLES: set[str] = {'bright', 'dim', 'normal', 'reset_all'}
+    '''
+        A collection of static methods for applying color and style to text in the console.
+        The ConsoleStencil class is meant to simplify the process of stylzing text in the 
+        Console with a simple method call. This acheieved using the Colorama library and 
+        Ansi escape codes.
+        
+        VALID_COLORS: set[str]: A set of valid colors that can be applied to text.
+        
+        VALID_STYLES: set[str]: A set of valid styles that can be applied to text.
+        
+        VALID_ANSI_STYLES: set[str]: A set of valid ANSI styles that can be applied to text.
+        
+        COLOR_MAP: dict[str, str]: A dictionary mapping color names to their respective Colorama
+        Attribute names.
+        
+        BACKGROUND_MAP: dict[str, str]: A dictionary mapping color names to their respective Colorama
+        Background Attribute names.
+        
+        STYLE_MAP: dict[str, str]: A dictionary mapping style names to their respective Colorama
+        Style Attribute names.
+        
+        ANSI_STYLE_MAP: dict[str, str]: A dictionary mapping ANSI style names to their respective
+        ANSI escape codes.
+    '''
+    
+    
+    VALID_COLORS: set[str] = { 'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'white', 'black' }
+    
+    VALID_STYLES: set[str] = { 'bright', 'dim', 'normal', 'reset_all' }
 
-    VALID_ANSI_STYLES: set[str] = {'bold', 'underline', 'italic', 'normal'}
+    VALID_ANSI_STYLES: set[str] = { 'bold', 'underline', 'italic', 'normal' }
 
-    COLOR_MAP: dict[str, str] = {
-        color: getattr(Fore, color.upper()) for color in VALID_COLORS
-    }
-    BACKGROUND_MAP: dict[str, str] = {
-        color: getattr(Back, color.upper()) for color in VALID_COLORS
-    }
-    STYLE_MAP: dict[str, str] = {
-        style: getattr(Style, style.upper()) for style in VALID_STYLES
-    }
+    COLOR_MAP: dict[str, str] = { color: getattr(Fore, color.upper()) for color in VALID_COLORS }
+    
+    BACKGROUND_MAP: dict[str, str] = { color: getattr(Back, color.upper()) for color in VALID_COLORS }
+    
+    STYLE_MAP: dict[str, str] = { style: getattr(Style, style.upper()) for style in VALID_STYLES }
+    
     ANSI_STYLE_MAP: dict[str, str] = {
         'bold': '\033[1m',
         'underline': '\033[4m',
@@ -181,7 +203,7 @@ class ConsoleStencil:
         ansi = ansi.lower()
         ansi_style = ConsoleStencil.ANSI_STYLE_MAP[ansi]
         return text.replace(phrase, 
-                f"{ ansi_style }{ phrase }{ ConsoleStencil.ANSI_STYLE_MAP['normal'] }"
+            f"{ ansi_style }{ phrase }{ ConsoleStencil.ANSI_STYLE_MAP['normal'] }"
         )
 
     @staticmethod
@@ -237,11 +259,65 @@ class ConsoleStencil:
         color_code = color_map[color]
         return text.replace(phrase, f'{ color_code }{ phrase }{ Style.RESET_ALL }')
 
+    @staticmethod
+    def brighten(text: str) -> str:
+        """
+            Brighten the text passed.
+
+            Args:
+                text (str): The text to brighten.
+        """
+        return ConsoleStencil.font_variant(text, 'bright')
+    
+    @staticmethod
+    def dim(text: str) -> str:
+        """
+            Dims the text passed.
+
+            Args:
+                text (str): The text to dim.
+        """
+        return ConsoleStencil.font_variant(text, 'dim')
+    
+    @staticmethod
+    def color_regex_matches(text: str, regex: re.Pattern, color: str) -> str:
+        """
+        Colors all occurrences of the given regex pattern in the text.
+
+        Args:
+            text (str): The text in which to color the regex matches.
+            regex (re.Pattern): The pre-compiled regex pattern.
+            color (str): The color to apply to the matches.
+
+        Returns:
+            str: The text with the regex matches colored.
+        """
+        if not isinstance(regex, re.Pattern) or not re.search(regex, text):
+            return text
         
+        color = color.lower()
+        
+        if color not in ConsoleStencil.VALID_COLORS:
+            return text
+        
+
+        return regex.sub(lambda match:
+            f"{ConsoleStencil.COLOR_MAP[color]}{match.group()}{Style.RESET_ALL}",
+            text
+        )
     
-def main():
-    pass
+
+def regex_test() -> None:
+    text = "There are 3 apples and 7 oranges in the basket. The price of 2 apples is $5."
+    pattern = re.compile(r'\d+')  # Matches all word characters
+    colored_text = ConsoleStencil.color_regex_matches(text, pattern, 'green')
+    print(colored_text)
+
+
+
     
+def main() -> None:
+    regex_test()
 
 if __name__ == '__main__':
     main()

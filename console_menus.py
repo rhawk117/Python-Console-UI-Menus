@@ -337,6 +337,7 @@ class PagedMenu(BaseMenu):
             time.sleep(0.01)
         return self.current_page_options[self.highlight]
 
+
 class CharMenuStyle:
     OPTION_DEFAULT = {
         'ansi' : 'italic',
@@ -543,18 +544,11 @@ def test_paged():
     choice = menu.run()
     
     print(f'You selected { choice }')
+
     
     
-    
-
-
-
-
-
 def main() -> None:
-    # test_vertical_menu()
-    # test_horizontal_menu()
-    # test_char_menu()
+    input()
     test_paged()
 
 

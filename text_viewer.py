@@ -1,6 +1,7 @@
 import os
 import keyboard
-from colorama import init, Fore, Back, Style
+from colorify import ConsoleStencil
+from colorama import Fore, Back
 
 # WORK IN PROGRESS
 init(autoreset=True)
@@ -23,7 +24,7 @@ class ConsoleTextViewer:
         self.term_height = os.get_terminal_size().lines
         self.term_width = os.get_terminal_size().columns
 
-    def clear_screen(self) -> None:
+    def clear(self) -> None:
         os.system('cls' if os.name == 'nt' else 'clear')
 
     def show_text(self) -> None:
@@ -52,7 +53,7 @@ class ConsoleTextViewer:
         print()
 
     def run(self):
-        self.clear_screen()
+        self.clear()
         while self.running:
             self.show_text()
             self.show_menu()
@@ -62,7 +63,7 @@ class ConsoleTextViewer:
                 continue
             
             self._handle_keys(event)
-            self.clear_screen()
+            self.clear()
 
     def _handle_keys(self, key) -> None:
         if key.name == 'up':

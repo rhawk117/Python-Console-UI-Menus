@@ -47,8 +47,7 @@ class PagedMenu:
         '''
         start = (self.current_page - 1) * self.page_size
         end = start + self.page_size
-        self.options.append(self.PREV_PAGE)
-        self.options.append(self.NEXT_PAGE)
+
         return self.options[start : end]
 
     def display(self) -> None:

@@ -56,27 +56,14 @@ def run_test(test_name, method_calls):
     input('Press Enter to Continue')
     
     
-def slicing():
-    options = [
-        'Option 1',
-        'Option 2',
-        'Option 3',
-        'Option 4',
-        'Option 5',
-        'Option 6',
-        'Option 7',
-        'Option 8',
-        'Option 9'
-    ]
-    print((11 // 3) + (11 % 3))
-        
+
     
     
 if __name__ == '__main__':
+    pass
     # run_test('Color Phrase', test_color_phrase)
     # run_test('ANSI Methods', ansi_methods)
     # run_test('Color Methods', color_methods)
     # run_test('Font Variants', font_vars)
     # run_test('Multi Style', multi_style)
     # input()
-    slicing()
