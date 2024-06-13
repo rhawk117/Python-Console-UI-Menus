@@ -6,16 +6,34 @@ import msvcrt
 import sys 
 
 class MenuError(Exception):
-    '''base class for all menu errors'''
-    
-
+    '''
+        Base Class for All Menu Errors
+        
+        -EmptyMenuError
+        
+        -InvalidPageSizeError
+        
+        -HorizontalSizeError
+    '''
 class EmptyMenuError(MenuError):
-    """Raised when trying to create a menu with no options."""
+    """
+        Raised when trying to create a menu with no options.
+    """
+    ERROR = "< ERROR > Console Menus must have at least one option"
     pass
 
 class InvalidPageSizeError(MenuError):
     """Raised when an invalid page size is provided."""
-    pass
+    ERROR = "< ERROR > Page size must be less than or equal to the number of options."
+
+
+
+class HorizontalSizeError(MenuError):
+    '''Raised when the number of options exceeds the screen width.'''
+    ERROR = "< ERROR > Horizontal Menus must have 6 or fewer options or they wont fit on the screen."
+
+
+
 
 class MenuStyle:
     VALID_STYLES: dict[str, set[str]]= {
@@ -34,13 +52,15 @@ class MenuStyle:
     
     @staticmethod
     def create_default():
-        return MenuStyle(MenuStyle.DEFAULT_SELECTED, MenuStyle.DEFAULT_UNSELECTED, MenuStyle.DEFAULT_PROMPT)
+        return MenuStyle(MenuStyle.DEFAULT_SELECTED, 
+        MenuStyle.DEFAULT_UNSELECTED, MenuStyle.DEFAULT_PROMPT)
 
     @staticmethod
     def validate_style(style: dict[str, str]) -> dict[str, str]:
         '''
-            Validates the style dictionary to ensure that the key word arguments
-            are valid and can be applied to the ConsoleStencil.multi_style() method.
+            Validates the style dictionary used to apply a custom style to a Menu
+            to ensure that the key word arguments are valid and can be applied to 
+            the ConsoleStencil.multi_style() method.
         '''
         if not style:
             return {}
@@ -107,15 +127,10 @@ class MenuStyle:
         prompt = f'[ < ? > { prompt } < ? > ]'
         return ConsoleStencil.multi_style(prompt, **self.prompt_style)
 
-class HorizontalSizeError(MenuError):
-    '''Raised when the number of options exceeds the screen width.'''
-    pass
-
-
 class BaseMenu:
     def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None) -> None:
         if len(options) == 0:
-            raise EmptyMenuError('ERROR: Menus must have at least one option')
+            raise EmptyMenuError(EmptyMenuError.ERROR)
 
         self.options: list[str] = options
         self.prompt: str = prompt
@@ -166,7 +181,7 @@ class BaseMenu:
             if key.event_type != keyboard.KEY_DOWN:
                 continue
             if key.name == 'enter':
-                    break
+                break
             self.handle_keys(key)
             time.sleep(0.01)
         return self.options[self.highlight]
@@ -184,10 +199,17 @@ class BaseMenu:
         self.active = False
 
 class VerticalMenu(BaseMenu):
+    
+    def __title_text(self) -> None: 
+        nav_txt = ConsoleStencil.multi_style(
+            f'[ Move ↑ / ↓ ]', ansi='italic', style='dim'
+        )
+        prompt = self.menu_style.prompt_stylize(self.prompt)
+        print(f'{ prompt } - { nav_txt }') 
+    
     def show(self) -> None:
         self.clear()
-        prompt = self.menu_style.prompt_stylize(self.prompt)
-        print(prompt)
+        self.__title_text()
         for idx, item in enumerate(self.options):
             option = self.menu_style.apply_option_style(item, idx == self.highlight)
             print(option)
@@ -195,6 +217,7 @@ class VerticalMenu(BaseMenu):
     def handle_keys(self, key: keyboard.KeyboardEvent) -> None:
         if key.name == 'up':
             self.move_up()
+            
         elif key.name == 'down':
             self.move_down()
 
@@ -222,11 +245,9 @@ class HorizontalMenu(BaseMenu):
         elif key.name == 'right':
             self.move_down()
 
-# def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None) -> None:
-
 
 class PagedMenu(BaseMenu):
-    NAV_GUIDE = "\t< i > Move ↑/↓  | Page ←/→ | Select Enter  < i >"
+    NAV_GUIDE = "\t[ < i > Move ↑/↓  | Page ←/→ | Select Enter  < i > ]"
 
     def __init__(self, options: list[str], prompt: str, menu_style: MenuStyle = None, 
     page_size: int = 3):
@@ -249,8 +270,7 @@ class PagedMenu(BaseMenu):
         if page_size <= 0:
             raise ValueError("[ ERROR ] Page size must be greater than zero.")
         if page_size > len(options):
-            raise InvalidPageSizeError(
-                "[ ERROR ] Page size must be less than or equal to the number of options.")
+            raise InvalidPageSizeError(InvalidPageSizeError.ERROR)
 
     @property
     def current_page(self) -> int:
@@ -282,9 +302,8 @@ class PagedMenu(BaseMenu):
         return self.options[start: end]
 
     def __title_text(self) -> None:
-        bar = '*' * 100
         nav_txt = ConsoleStencil.multi_style(
-            f'{ bar }\n{ self.NAV_GUIDE }\n{ bar }\n', ansi='italic', style='dim'
+            f'\n{ self.NAV_GUIDE }\n', ansi='italic', style='dim'
         )
         prompt_txt = self.menu_style.prompt_stylize(self.prompt)
         print(
@@ -299,8 +318,7 @@ class PagedMenu(BaseMenu):
         self.clear()
         self.__title_text()
         for idx, option in enumerate(self.current_page_options):
-            opt = self.menu_style.apply_option_style(option, 
-            idx == self.highlight)
+            opt = self.menu_style.apply_option_style(option, idx == self.highlight)
             print(opt)
         print('*' * 100)
 
@@ -366,9 +384,12 @@ class CharMenuStyle:
     def apply_prompt(self, prompt: str) -> str:
         return ConsoleStencil.multi_style(prompt, **self.prompt_style)
 
+
+
         
 class CharMenu:
-    def __init__(self, key_map: dict[str, str], prompt: str, option_style: CharMenuStyle = None) -> None:
+    def __init__(self, key_map: dict[str, str], prompt: str, 
+    option_style: CharMenuStyle = None, is_horizontal: bool = False) -> None:
         '''
             Args:
                 key_map (dict[str, str]): A dictionary mapping keys to options
@@ -381,6 +402,8 @@ class CharMenu:
         self.key_map: dict[str, str] = key_map
         self.prompt: str = prompt
         self.style: CharMenuStyle = option_style if option_style else CharMenuStyle.create_default()
+        self.sep = '    ' if is_horizontal else '\n'
+        
         
     def __read_key(self) -> str:
         '''
@@ -408,7 +431,7 @@ class CharMenu:
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.style.apply_prompt(f'[ < ? > {self.prompt} < ? > ]'))
         for key, value in self.key_map.items():
-            print(self.style.apply_option(f'[ {key} ] - {value}'))
+            print(self.style.apply_option(f'[ {key} ] - {value}'), end=self.sep)
             
     def run(self) -> str:
         key = None
